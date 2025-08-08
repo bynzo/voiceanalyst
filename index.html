@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Analyst PWA</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PWA Manifest and Service Worker -->
+    <link rel="manifest" href="/manifest.json">
+    <script>
+        // Register the service worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                }).catch(err => {
+                    console.error('Service Worker registration failed:', err);
+                });
+            });
+        }
+    </script>
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        html { font-family: 'Inter', sans-serif; }
+        body { background-color: #f3f4f6; }
+        .loading-animation {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <main class="w-full max-w-2xl bg-white rounded-xl shadow-2xl p-8 space-y-6 flex flex-col items-center">
+        <h1 class="text-3xl font-extrabold text-gray-900 text-center">Voice Analyst</h1>
+        <p class="text-gray-500 text-center">Record a conversation to transcribe, identify speakers, and analyze personalities.</p>
+
+        <div class="w-full flex justify-center space-x-4">
+            <button id="recordButton" class="flex items-center justify-center px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full shadow-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-300">
+                <i class="fas fa-microphone mr-2"></i>
+                Start Recording
+            </button>
+            <button id="stopButton" class="hidden flex items-center justify-center px-6 py-3 bg-gray-400 text-white font-bold rounded-full shadow-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300" disabled>
+                <i class="fas fa-stop mr-2"></i>
+                Stop Recording
+            </button>
+        </div>
+
+        <div id="status" class="mt-4 text-center text-gray-700 font-medium hidden">
+            <div id="statusText"></div>
+            <div id="loading" class="loading-animation mx-auto mt-2"></div>
+        </div>
+
+        <section id="results" class="w-full space-y-6 mt-8 hidden">
+            <h2 class="text-2xl font-bold text-gray-900 text-center">Analysis Results</h2>
+
+            <div id="transcript-section" class="space-y-4">
+                <h3 class="text-xl font-semibold text-gray-800 border-b-2 pb-2">Transcript</h3>
+                <div id="transcript" class="bg-gray-100 p-4 rounded-lg overflow-auto max-h-60 text-gray-800">
+                    <!-- Transcript content will be injected here -->
+                </div>
+            </div>
+
+            <div id="personality-section" class="space-y-4">
+                <h3 class="text-xl font-semibold text-gray-800 border-b-2 pb-2">DISC Personality Analysis</h3>
+                <div id="personality-analysis" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Personality analysis cards will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Custom Modal for Alerts -->
+        <div id="modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+                <h3 id="modalTitle" class="text-lg font-bold text-gray-900"></h3>
+                <p id="modalMessage" class="mt-2 text-gray-600"></p>
+                <button id="modalCloseButton" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">OK</button>
+            </div>
+        </div>
+
+    </main>
+    <script src="/app.js"></script>
+</body>
+</html>
