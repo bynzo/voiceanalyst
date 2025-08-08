@@ -2,9 +2,10 @@
 
 const CACHE_NAME = 'voice-analyst-pwa-cache-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/app.js',
+    './', // Change here to a relative path
+    './index.html',
+    './app.js',
+    './manifest.json',
     'https://cdn.tailwindcss.com',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     'https://rsms.me/inter/inter.css',

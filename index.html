@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Analyst PWA</title>
+    <!-- Setting a base URL is a best practice for PWAs in subdirectories like GitHub Pages -->
+    <base href="/">
     <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PWA Manifest and Service Worker -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <script>
         // Register the service worker for PWA functionality
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(registration => {
+                // Use a relative path to register the service worker
+                navigator.serviceWorker.register('./sw.js').then(registration => {
                     console.log('Service Worker registered with scope:', registration.scope);
                 }).catch(err => {
                     console.error('Service Worker registration failed:', err);
@@ -89,6 +92,6 @@
         </div>
 
     </main>
-    <script src="/app.js"></script>
+    <script src="./app.js"></script>
 </body>
 </html>
