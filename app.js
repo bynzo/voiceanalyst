@@ -251,7 +251,9 @@ const startRecording = async () => {
             return;
         }
 
-        mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/webm' });
+        // --- FIX: Removed the mimeType from the MediaRecorder constructor ---
+        // Let the browser choose the most compatible format automatically.
+        mediaRecorder = new MediaRecorder(mediaStream);
         
         mediaRecorder.ondataavailable = (e) => {
             audioChunks.push(e.data);
