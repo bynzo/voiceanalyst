@@ -2,7 +2,7 @@
 
 const CACHE_NAME = 'voice-analyst-pwa-cache-v1';
 const urlsToCache = [
-    './', // Change here to a relative path
+    './', 
     './index.html',
     './app.js',
     './manifest.json',
