@@ -24,6 +24,7 @@ let mediaRecorder;
 let audioChunks = [];
 let audioBlob;
 let isRecording = false;
+let mediaStream = null;
 
 // --- Utility Functions ---
 const showModal = (title, message) => {
@@ -237,8 +238,20 @@ const startRecording = async () => {
     }
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        // Use getDisplayMedia to capture system audio from a tab, window, or screen
+        mediaStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true, // A dummy video track is needed to get the audio track
+            audio: true
+        });
+
+        // Check if audio track is available
+        const audioTrack = mediaStream.getAudioTracks()[0];
+        if (!audioTrack) {
+            showModal('Audio not captured', 'Please ensure you select a source with audio when prompted.');
+            return;
+        }
+
+        mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/webm' });
         
         mediaRecorder.ondataavailable = (e) => {
             audioChunks.push(e.data);
@@ -249,6 +262,9 @@ const startRecording = async () => {
             stopButton.disabled = true;
             stopButton.classList.add('hidden');
             recordButton.classList.remove('hidden');
+
+            // Stop all tracks to end the stream
+            mediaStream.getTracks().forEach(track => track.stop());
 
             audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
             const reader = new FileReader();
@@ -275,6 +291,13 @@ const startRecording = async () => {
             };
         };
 
+        // If the user cancels the screen sharing prompt
+        mediaStream.addEventListener('inactive', () => {
+            if (isRecording) {
+                stopRecording();
+            }
+        });
+
         // Start recording
         audioChunks = [];
         mediaRecorder.start();
@@ -283,18 +306,26 @@ const startRecording = async () => {
         recordButton.classList.add('hidden');
         stopButton.disabled = false;
         stopButton.classList.remove('hidden');
-        showStatus('Recording...', false);
+        showStatus('Recording system audio...', false);
         resultsSection.classList.add('hidden');
 
     } catch (e) {
-        console.error('Error accessing microphone:', e);
-        showModal('Microphone Access Denied', 'Please allow microphone access to use the recording feature.');
+        console.error('Error accessing screen/audio:', e);
+        if (e.name === 'NotAllowedError' || e.name === 'NotFoundError') {
+            // User denied permission or no suitable device/source found
+            showModal('Screen/Audio Access Denied', 'You must grant permission and select a source to record system audio.');
+        } else {
+            showModal('Error', `An unexpected error occurred: ${e.message}`);
+        }
     }
 };
 
 const stopRecording = () => {
     if (isRecording && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
     }
 };
 
