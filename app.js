@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let fullTranscript = "";
     let shouldContinueRecording = false;
     let recordingTimeout = null;
+    let silenceTimeout = null;
 
     // --- Configuration Constants ---
     const CHUNK_DURATION_MS = 15000; // 15 seconds per recording chunk
@@ -262,6 +263,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let lastActiveTime = Date.now();
                 scriptProcessor.onaudioprocess = (event) => {
+                    if (!shouldContinueRecording) {
+                        return; // Add an extra check to prevent new stops after the user has already pressed stop.
+                    }
                     const input = event.inputBuffer.getChannelData(0);
                     let sum = 0;
                     for (let i = 0; i < input.length; ++i) {
@@ -373,10 +377,30 @@ document.addEventListener('DOMContentLoaded', () => {
         shouldContinueRecording = false;
         if (recordingTimeout) {
             clearTimeout(recordingTimeout);
+            recordingTimeout = null;
         }
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
         }
+        // This is the new part: stop all tracks to close the screen sharing stream
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+            mediaStream = null; // Reset the mediaStream variable
+        }
+        // Disconnect audio nodes to stop silence detection loop
+        if (scriptProcessor) {
+            scriptProcessor.disconnect();
+            scriptProcessor = null;
+        }
+        if (analyserNode) {
+            analyserNode.disconnect();
+            analyserNode = null;
+        }
+        if (audioContext) {
+            audioContext.close();
+            audioContext = null;
+        }
+
         // Update UI state after the recording has actually stopped
         setTimeout(() => {
             recordButton.disabled = false;
