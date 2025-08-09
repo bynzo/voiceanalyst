@@ -3,95 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Analyst PWA</title>
-    <!-- Tailwind CSS for modern styling -->
+    <title>Continuous Voice Recorder</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PWA Manifest and Service Worker -->
-    <!-- Using relative paths for files in the same directory -->
-    <link rel="manifest" href="./manifest.json">
-    <script>
-        // Register the service worker for PWA functionality
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                // Use a relative path to register the service worker
-                navigator.serviceWorker.register('./sw.js').then(registration => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                }).catch(err => {
-                    console.error('Service Worker registration failed:', err);
-                });
-            });
-        }
-    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        @import url('https://rsms.me/inter/inter.css');
-        html { font-family: 'Inter', sans-serif; }
-        body { background-color: #f3f4f6; }
-        .loading-animation {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .container {
+            max-width: 900px;
+        }
+        /* Custom modal animation */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
-
-    <main class="w-full max-w-2xl bg-white rounded-xl shadow-2xl p-8 space-y-6 flex flex-col items-center">
-        <h1 class="text-3xl font-extrabold text-gray-900 text-center">Voice Analyst</h1>
-        <p class="text-gray-500 text-center">Record a conversation to transcribe, identify speakers, and analyze personalities.</p>
-        <p id="instructionText" class="text-blue-600 font-medium text-center">Click record and select a tab, window, or screen to capture its audio.</p>
-
-        <div class="w-full flex justify-center space-x-4">
-            <button id="recordButton" class="flex items-center justify-center px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full shadow-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-300">
-                <i class="fas fa-microphone mr-2"></i>
-                Start Recording
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container mx-auto p-8 bg-white shadow-xl rounded-2xl flex flex-col items-center">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Continuous Voice Recorder</h1>
+            <p class="text-gray-600">
+                Transcribe and analyze personalities in real-time from system audio.
+            </p>
+        </header>
+        
+        <div class="flex space-x-4 mb-8">
+            <button id="recordButton" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105 flex items-center space-x-2">
+                <i class="fas fa-microphone"></i>
+                <span>Start Recording</span>
             </button>
-            <button id="stopButton" class="hidden flex items-center justify-center px-6 py-3 bg-gray-400 text-white font-bold rounded-full shadow-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300" disabled>
-                <i class="fas fa-stop mr-2"></i>
-                Stop Recording
+            <button id="stopButton" class="bg-red-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:bg-red-700 transition duration-300 transform hover:scale-105 hidden flex items-center space-x-2" disabled>
+                <i class="fas fa-stop"></i>
+                <span>Stop Recording</span>
+            </button>
+            <button id="clearButton" class="bg-gray-400 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:bg-gray-500 transition duration-300 transform hover:scale-105 flex items-center space-x-2">
+                <i class="fas fa-trash-alt"></i>
+                <span>Clear</span>
             </button>
         </div>
-
-        <div id="status" class="mt-4 text-center text-gray-700 font-medium hidden">
-            <div id="statusText"></div>
-            <div id="loading" class="loading-animation mx-auto mt-2"></div>
+        
+        <div id="status" class="hidden text-center my-4">
+            <div id="loading" class="hidden animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto mb-2"></div>
+            <p id="statusText" class="text-gray-600"></p>
         </div>
 
-        <section id="results" class="w-full space-y-6 mt-8 hidden">
-            <h2 class="text-2xl font-bold text-gray-900 text-center">Analysis Results</h2>
-
-            <div id="transcript-section" class="space-y-4">
-                <h3 class="text-xl font-semibold text-gray-800 border-b-2 pb-2">Transcript</h3>
-                <div id="transcript" class="bg-gray-100 p-4 rounded-lg overflow-auto max-h-60 text-gray-800">
-                    <!-- Transcript content will be injected here -->
+        <div id="results" class="hidden w-full space-y-6">
+            <section class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Transcript</h3>
+                <div id="transcript" class="space-y-2 text-gray-800">
+                    <!-- Transcript will be rendered here -->
                 </div>
-            </div>
+            </section>
 
-            <div id="personality-section" class="space-y-4">
-                <h3 class="text-xl font-semibold text-gray-800 border-b-2 pb-2">DISC Personality Analysis</h3>
+            <section class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Personality Analysis (DISC)</h3>
                 <div id="personality-analysis" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Personality analysis cards will be injected here -->
+                    <!-- Personality profiles will be rendered here -->
                 </div>
-            </div>
-        </section>
-
-        <!-- Custom Modal for Alerts -->
-        <div id="modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
-                <h3 id="modalTitle" class="text-lg font-bold text-gray-900"></h3>
-                <p id="modalMessage" class="mt-2 text-gray-600"></p>
-                <button id="modalCloseButton" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">OK</button>
-            </div>
+            </section>
         </div>
-
-    </main>
-    <script src="./app.js"></script>
+    </div>
+    
+    <!-- Modal for messages -->
+    <div id="modal" class="hidden fixed inset-0 flex items-center justify-center z-50 modal-overlay">
+        <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full modal-content transform">
+            <h3 id="modalTitle" class="text-xl font-bold mb-2 text-red-600"></h3>
+            <p id="modalMessage" class="text-gray-700 mb-4"></p>
+            <button id="modalCloseButton" class="w-full bg-red-600 text-white py-2 rounded-full font-semibold hover:bg-red-700 transition duration-300">Close</button>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
 </body>
 </html>
